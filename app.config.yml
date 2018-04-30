@@ -1,0 +1,26 @@
+StackName: shiny-app-codelist-service
+
+TemplateBody:
+  Fn::Stringify: !Include ../container-shiny/app/app.template.yml
+
+Parameters:
+  - ParameterKey: ApplicationName
+    ParameterValue: codelist
+
+  - ParameterKey: ServiceStackName
+    ParameterValue: shiny-service
+
+  - ParameterKey: VpcStackName
+    ParameterValue: shiny-vpc
+
+  - ParameterKey: Port
+    ParameterValue: '1026'
+
+  - ParameterKey: Memory
+    ParameterValue: '1024'
+
+  - ParameterKey: Cpu
+    ParameterValue: '512'
+
+Capabilities:
+  - CAPABILITY_IAM
