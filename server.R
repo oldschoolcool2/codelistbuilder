@@ -10,26 +10,28 @@ library(DT)
 #library(regexSelect)
 
 # Set zip environment variable to save out the xlsx files
-#Sys.setenv(R_ZIPCMD= "C:\\Rtools\\bin\\zip.exe")
-Sys.setenv(R_ZIPCMD= "\\\\Deda1nadat01\\PHAKLINIK\\Epidemiology\\Projects\\2_Non Product-related Projects\\HIF\\Tools & Resources\\Code List Builder\\zip.exe")
+#Sys.setenv(R_ZIPCMD= "C:/Rtools/bin/zip.exe")
+#Sys.setenv(R_ZIPCMD= "zip.exe")
 
 # Read in all source data tables
-icd9 <- data.table(read.xlsx("\\\\Deda1nadat01\\PHAKLINIK\\Epidemiology\\Projects\\2_Non Product-related Projects\\HIF\\Tools & Resources\\Code List Builder\\data\\ICD-9-CM-v32-master-descriptions\\CMS32_DESC_LONG_SHORT_DX.xlsx"))
+# icd9 <- data.table(read.xlsx("data/ICD-9-CM-v32-master-descriptions/CMS32_DESC_LONG_SHORT_DX.xlsx"))
+
+icd9 <- data.table(read.xlsx('data/2015-code-descriptions/icd10cm_order_2015_excelformat.xlsx'))
 icd9$item <- paste(icd9$DIAGNOSIS.CODE, ' - ', icd9$SHORT.DESCRIPTION)
 icd9$item3 <- substr(icd9$DIAGNOSIS.CODE,1,3)
 
-icd10 <- data.table(read.xlsx("\\\\Deda1nadat01\\PHAKLINIK\\Epidemiology\\Projects\\2_Non Product-related Projects\\HIF\\Tools & Resources\\Code List Builder\\data\\2015-code-descriptions\\icd10cm_order_2015_excelformat.xlsx"))
+icd10 <- data.table(read.xlsx("data/2015-code-descriptions/icd10cm_order_2015_excelformat.xlsx"))
 icd10$VALUE <- trimws(icd10$VALUE, which = "right")
 icd10$item <- paste(icd10$VALUE, ' - ', icd10$SHORT.DESCRIPTION)
 icd10$item3 <- substr(icd10$VALUE,1,3)
 
-icd9_10GEMS <- data.table(read.table("\\\\Deda1nadat01\\PHAKLINIK\\Epidemiology\\Projects\\2_Non Product-related Projects\\HIF\\Tools & Resources\\Code List Builder\\data\\DiagnosisGEMs_2015\\2015_I9gem.txt", colClasses = c(rep("character", 3))))
-icd10_9GEMS <- data.table(read.table("\\\\Deda1nadat01\\PHAKLINIK\\Epidemiology\\Projects\\2_Non Product-related Projects\\HIF\\Tools & Resources\\Code List Builder\\data\\DiagnosisGEMs_2015\\2015_I10gem.txt", colClasses = c(rep("character", 3))))
+icd9_10GEMS <- data.table(read.table("data/DiagnosisGEMs_2015/2015_I9gem.txt", colClasses = c(rep("character", 3))))
+icd10_9GEMS <- data.table(read.table("data/DiagnosisGEMs_2015/2015_I10gem.txt", colClasses = c(rep("character", 3))))
 
-hcpcs <- data.table(read.xlsx("\\\\Deda1nadat01\\PHAKLINIK\\Epidemiology\\Projects\\2_Non Product-related Projects\\HIF\\Tools & Resources\\Code List Builder\\data\\HCPC2018_CONTR_ANWEB.xlsx"))
+hcpcs <- data.table(read.xlsx("data/HCPC2018_CONTR_ANWEB.xlsx"))
 hcpcs$item <- paste(hcpcs$HCPC, ' - ', hcpcs$SHORT.DESCRIPTION)
 
-redbook <- fread("\\\\Deda1nadat01\\PHAKLINIK\\Epidemiology\\Projects\\2_Non Product-related Projects\\HIF\\Tools & Resources\\Code List Builder\\data\\redbook\\redbook.csv", sep = ",", header= TRUE, colClasses = list(characer=c(1:33)))
+redbook <- fread("data/redbook/redbook.csv", sep = ",", header= TRUE, colClasses = list(characer=c(1:33)))
 
 # Define server logic required to draw a histogram
 shinyServer(function(input, output, session) {
