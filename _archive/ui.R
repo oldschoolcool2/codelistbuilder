@@ -1,6 +1,6 @@
 library(shiny)
 
-# Define UI for application that draws a histogram
+# Define SHINY UI
 shinyUI(fluidPage(
   
   # Application title
