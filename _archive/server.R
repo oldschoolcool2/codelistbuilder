@@ -1,17 +1,8 @@
-#.libPaths( c( .libPaths(), "C:\\R Library") )
-#install.packages(c("shiny", "openxlsx", "ggplot2", "DT", "data.table"))
-#devtools::install_github('yonicd/regexSelect')
-# install.packages('regexSelect')
-
 library(shiny)
 library(openxlsx)
 library(data.table)
 library(DT)
-#library(regexSelect)
-
-# Set zip environment variable to save out the xlsx files
-#Sys.setenv(R_ZIPCMD= "C:/Rtools/bin/zip.exe")
-#Sys.setenv(R_ZIPCMD= "zip.exe")
+library(shinydashboard)
 
 # Read in all source data tables
 # icd9 <- data.table(read.xlsx("data/ICD-9-CM-v32-master-descriptions/CMS32_DESC_LONG_SHORT_DX.xlsx"))
@@ -103,5 +94,3 @@ shinyServer(function(input, output, session) {
     }
   )
 })
-
-enableBookmarking(store = "url")
