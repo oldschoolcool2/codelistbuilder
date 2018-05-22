@@ -71,7 +71,7 @@ ui <- dashboardPage(
               h2("Home tab content")
       ),
       tabItem(tabName = "codelistbuilder",
-            h2("Mike's Super Awesome Code List Builder"),
+            h2("R&D Global Epidemiology Code List Builder"),
             fluidRow(
               # Sidebar with selection options
                 box(
@@ -82,7 +82,7 @@ ui <- dashboardPage(
                   selectInput('selected_icd10', 'Select ICD-10 Codes', choices=NULL, multiple=TRUE, selectize=TRUE)
                 ),
                 box(
-                  title='HCPCS Codes for Injectibles', solidHeader = TRUE, background='olive', width=4,
+                  title='HCPCS Codes for Injections', solidHeader = TRUE, background='olive', width=4,
                   selectInput('selected_hcpcs', 'Select HCPCS Codes',  choices=NULL, multiple=TRUE, selectize=TRUE)
                   ),
                 box(
