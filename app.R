@@ -106,10 +106,10 @@ ui <- dashboardPage(
   dashboardBody(
     tabItems(
       # First tab content
-      tabItem(tabName = "home",
-              h2("Home tab content")
-      ),
-      tabItem(tabName = "codelistbuilder",
+      #tabItem(tabName = "home",
+      #        h2("Home tab content")
+      #),
+      tabItem(tabName = "codelistbuilder", class="active",
             h2("R&D Global Epidemiology Code List Builder"),
             fluidRow(
               # Sidebar with selection options
@@ -129,10 +129,10 @@ ui <- dashboardPage(
                 ),
                 box(
                   title='National Drug Code (NDC) Prescription Codes', solidHeader = TRUE, background='red', width=4,
+                  selectInput('selected_routes', 'Select NDC Codes by Route (REQUIRED)',  choices=NULL, multiple=TRUE, selectize=TRUE),
                   selectInput('selected_gennme', 'Select NDC Codes by Generic Name',  choices=NULL, multiple=TRUE, selectize=TRUE),
                   selectInput('selected_prodnme', 'Select NDC Codes by Brand Name',  choices=NULL, multiple=TRUE, selectize=TRUE),
-                  selectInput('selected_THRCLSD', 'Select NDC Codes by Therapeutic Class',  choices=NULL, multiple=TRUE, selectize=TRUE),
-                  selectInput('selected_routes', 'Select NDC Codes by Route (required)',  choices=NULL, multiple=TRUE, selectize=TRUE)
+                  selectInput('selected_THRCLSD', 'Select NDC Codes by Therapeutic Class',  choices=NULL, multiple=TRUE, selectize=TRUE)
                   #, bookmarkButton()
                 ),
                 box(
