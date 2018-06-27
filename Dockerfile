@@ -1,7 +1,7 @@
 FROM 833333815239.dkr.ecr.us-east-1.amazonaws.com/container-shiny:v1.1.0
 
 USER root
-RUN R --quiet -e "install.packages(c('openxlsx', 'shinydashboard'), quiet = TRUE)"
+RUN R --quiet -e "install.packages(c('openxlsx', 'shinydashboard', 'feather'), quiet = TRUE)"
 USER shiny
 
 # COPY --chown=shiny:shiny . /srv/shiny-server
