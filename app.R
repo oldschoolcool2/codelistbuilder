@@ -56,6 +56,7 @@ if (update_datasets == TRUE){
   hcpcs$item <- paste(hcpcs$HCPC, ' - ', hcpcs$SHORT.DESCRIPTION)
   
   redbook <- fread("data/redbook/redbook.csv", sep = ",", header= TRUE, colClasses = list(characer=c(1:33)))
+  redbook$ROADS <- ifelse(redbook$ROADS == '', 'Unspecified Route', redbook$ROADS)
   
   # Save all datasets to feather format for efficiency!
   datasets <- list(hcpcs = hcpcs, icd10 = icd10, icd10_9GEMS = icd10_9GEMS, icd9 = icd9, 
@@ -90,12 +91,18 @@ ui <- dashboardPage(
     title="Merck R&D",
     titleWidth = 350,
     dropdownMenu(type = "messages",
-                                 messageItem(
-                                   from = "Mike",
-                                   message = "Code List Builder is live! Hooray!",
-                                   icon = icon("trophy"),
-                                   time = "06-27-2018"
-                                 )
+                 messageItem(
+                   from = "Mike",
+                   message = "Code List Builder is live! Hooray!",
+                   icon = icon("trophy"),
+                   time = "06-27-2018"
+                 ),
+                 messageItem(
+                   from = "Mike",
+                   message = "NDC 'Unspecified Route's added!",
+                   icon = icon("exchange"),
+                   time = "08-09-2018"
+                 )
     )
   ),
   dashboardSidebar(
