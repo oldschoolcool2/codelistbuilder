@@ -256,7 +256,7 @@ server <- function(input, output, session) {
                   , options = list(lengthMenu = c(5, 30, 50), pageLength = 5), rownames= FALSE)
   })
   output$drg_table <- DT::renderDataTable({
-    DT::datatable(drg[(drg$drg_item %chin% input$selected_drg | drg$drg_item %chin% input$selected_drg2), c(3,2), drop=FALSE]
+    DT::datatable(drg[(drg$drg_item %chin% input$selected_drg | drg$DRG_VALUE2 %chin% input$selected_drg2), c(3,2), drop=FALSE]
                   , options = list(lengthMenu = c(5, 30, 50), pageLength = 5), rownames= FALSE)
   })
   output$ndc_table <- DT::renderDataTable({
@@ -278,7 +278,7 @@ server <- function(input, output, session) {
     content = function(file) {
       # Data to be saved
       hcpcs_data <- hcpcs[hcpcs$item %chin% input$selected_hcpcs, c(1:48), drop=FALSE]
-      drg_data <- drg[(drg$drg_item %chin% input$selected_drg | drg$drg_item %chin% input$selected_drg2), c(3,2), drop=FALSE]
+      drg_data <- drg[(drg$drg_item %chin% input$selected_drg | drg$DRG_VALUE2 %chin% input$selected_drg2), c(3,2), drop=FALSE]
       icd9_data  <- icd9[(icd9$item2 %chin% input$selected_icd92 | icd9$item3 %chin% input$selected_icd93 | 
                             icd9$item4 %chin% input$selected_icd94 | icd9$item %chin% input$selected_icd9 | 
                             icd9$DIAGNOSIS.CODE %chin% icd10_9GEMS[icd10_9GEMS$V1 %chin% icd10[(icd10$item %chin% input$selected_icd10 | icd10$item2 %chin% input$selected_icd102 | icd10$item3 %chin% input$selected_icd103 | icd10$item4 %chin% input$selected_icd104), ]$VALUE, ]$V2)
