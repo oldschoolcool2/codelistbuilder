@@ -7,11 +7,13 @@ library(data.table)
 library(DT)
 library(feather)
 
-# Mike's testing environment
-
 # Set zip environment variable to save out the xlsx files
 #Sys.setenv(R_ZIPCMD= "zip.exe")
 
+# Mike's testing environment
+#icd9 <- data.table(read.xlsx("data\\ICD-9-CM-v32-master-descriptions\\CMS32_DESC_LONG_SHORT_DX.xlsx"))
+
+# Read in all source data tables
 # if (update_datasets == TRUE){
 #   icd9 <- data.table(read.xlsx('data\\CMS32_DESC_LONG_SHORT_DX.xlsx'))
 #   icd9$item <- paste(icd9$DIAGNOSIS.CODE, ' - ', icd9$SHORT.DESCRIPTION)
@@ -37,7 +39,8 @@ library(feather)
 #   
 #    drg <- fread(file="data\\drg34g.csv", sep=",", header=FALSE, colClasses = c("numeric", "character"), col.names = c("DRG", "LABEL"))
 #    drg$DRG_VALUE <- formatC(drg$DRG, width=3, flag="0")
-#    drg$item <- paste(drg$DRG_VALUE, ' - ', drg$LABEL)
+#    drg$DRG_VALUE2 <- substr(drg$DRG_VALUE, 1,2)
+#    drg$item <- paste(drg$drg_value, ' - ', drg$LABEL)
 #   
 #   # Save all datasets to feather format for efficiency!
 #   datasets <- list(hcpcs = hcpcs, icd10 = icd10, icd10_9GEMS = icd10_9GEMS, icd9 = icd9, 
@@ -82,6 +85,7 @@ if (update_datasets == TRUE){
   
   drg <- fread(file="data/drg34g.csv", sep=",", header=FALSE, colClasses = c("numeric", "character"), col.names = c("DRG", "LABEL"))
   drg$DRG_VALUE <- formatC(drg$DRG, width=3, flag="0")
+  drg$DRG_VALUE2 <- substr(drg$DRG_VALUE, 1,2)
   drg$drg_item <- paste(drg$DRG_VALUE, ' - ', drg$LABEL)
   
   # Save all datasets to feather format for efficiency!
@@ -107,6 +111,7 @@ icd10 <- read_feather(paste0("data/", "icd10.feather"))
 icd10_9GEMS <- read_feather(paste0("data/", "icd10_9GEMS.feather"))
 redbook <- read_feather(paste0("data/", "redbook.feather"))
 drg <- read_feather(paste0("data/", "drg.feather"))
+
 
 ##################################################################################################################
 ##################################################################################################################
@@ -181,6 +186,7 @@ ui <- dashboardPage(
                 ),
                 box(
                   title='Diagnostic Related Group', solidHeader = TRUE, background='purple', width=4,
+                  selectInput('selected_drg2', 'Select DRG Codes (2-digits)', choices=NULL, multiple=TRUE, selectize=TRUE),
                   selectInput('selected_drg', 'Select DRG Codes',  choices=NULL, multiple=TRUE, selectize=TRUE)
                 )
               ),
@@ -212,15 +218,15 @@ ui <- dashboardPage(
 server <- function(input, output, session) {
   
   # Server side selectize updating
-  updateSelectizeInput(session, 'selected_icd92',   choices = icd9$item2,      server = TRUE)
-  updateSelectizeInput(session, 'selected_icd93',   choices = icd9$item3,      server = TRUE)
-  updateSelectizeInput(session, 'selected_icd94',   choices = icd9$item4,      server = TRUE)
-  updateSelectizeInput(session, 'selected_icd9',    choices = icd9$item,       server = TRUE)
+  updateSelectizeInput(session, 'selected_icd92',   choices = icd9$item2,   server = TRUE)
+  updateSelectizeInput(session, 'selected_icd93',   choices = icd9$item3,   server = TRUE)
+  updateSelectizeInput(session, 'selected_icd94',   choices = icd9$item4,   server = TRUE)
+  updateSelectizeInput(session, 'selected_icd9',    choices = icd9$item,    server = TRUE)
   
-  updateSelectizeInput(session, 'selected_icd102',  choices = icd10$item2,     server = TRUE)
-  updateSelectizeInput(session, 'selected_icd103',  choices = icd10$item3,     server = TRUE)
-  updateSelectizeInput(session, 'selected_icd104',  choices = icd10$item4,     server = TRUE)
-  updateSelectizeInput(session, 'selected_icd10',   choices = icd10$item,      server = TRUE)
+  updateSelectizeInput(session, 'selected_icd102',  choices = icd10$item2,  server = TRUE)
+  updateSelectizeInput(session, 'selected_icd103',  choices = icd10$item3,  server = TRUE)
+  updateSelectizeInput(session, 'selected_icd104',  choices = icd10$item4,  server = TRUE)
+  updateSelectizeInput(session, 'selected_icd10',   choices = icd10$item,   server = TRUE)
   
   updateSelectizeInput(session, 'selected_hcpcs',   choices = hcpcs$item,      server = TRUE)
   updateSelectizeInput(session, 'selected_gennme',  choices = redbook$GENNME,  server = TRUE)
@@ -228,6 +234,7 @@ server <- function(input, output, session) {
   updateSelectizeInput(session, 'selected_THRCLSD', choices = redbook$THRCLDS, server = TRUE)
   updateSelectizeInput(session, 'selected_routes',  choices = redbook$ROADS,   server = TRUE)
   updateSelectizeInput(session, 'selected_drg',     choices = drg$drg_item,    server = TRUE)
+  updateSelectizeInput(session, 'selected_drg2',    choices = drg$DRG_VALUE2,  server = TRUE)
   
   # Render coding tables for display of selected codes
   output$icd9_table <- DT::renderDataTable({
@@ -249,7 +256,7 @@ server <- function(input, output, session) {
                   , options = list(lengthMenu = c(5, 30, 50), pageLength = 5), rownames= FALSE)
   })
   output$drg_table <- DT::renderDataTable({
-    DT::datatable(drg[drg$drg_item %chin% input$selected_drg, c(3,2), drop=FALSE]
+    DT::datatable(drg[(drg$drg_item %chin% input$selected_drg | drg$drg_item %chin% input$selected_drg2), c(3,2), drop=FALSE]
                   , options = list(lengthMenu = c(5, 30, 50), pageLength = 5), rownames= FALSE)
   })
   output$ndc_table <- DT::renderDataTable({
@@ -271,7 +278,7 @@ server <- function(input, output, session) {
     content = function(file) {
       # Data to be saved
       hcpcs_data <- hcpcs[hcpcs$item %chin% input$selected_hcpcs, c(1:48), drop=FALSE]
-      drg_data <- drg[drg$drg_item %chin% input$selected_drg, c(3,2), drop=FALSE]
+      drg_data <- drg[(drg$drg_item %chin% input$selected_drg | drg$drg_item %chin% input$selected_drg2), c(3,2), drop=FALSE]
       icd9_data  <- icd9[(icd9$item2 %chin% input$selected_icd92 | icd9$item3 %chin% input$selected_icd93 | 
                             icd9$item4 %chin% input$selected_icd94 | icd9$item %chin% input$selected_icd9 | 
                             icd9$DIAGNOSIS.CODE %chin% icd10_9GEMS[icd10_9GEMS$V1 %chin% icd10[(icd10$item %chin% input$selected_icd10 | icd10$item2 %chin% input$selected_icd102 | icd10$item3 %chin% input$selected_icd103 | icd10$item4 %chin% input$selected_icd104), ]$VALUE, ]$V2)
