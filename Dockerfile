@@ -4,13 +4,10 @@ USER root
 RUN R --quiet -e "install.packages(c('openxlsx', 'shinydashboard', 'feather'), quiet = TRUE)"
 USER shiny
 
-# COPY --chown=shiny:shiny . /srv/shiny-server
-COPY . /srv/shiny-server
+COPY --chown=shiny:shiny . /srv/shiny-server
 
-# ARG container_credentials
-# ENV AWS_CONTAINER_CREDENTIALS_RELATIVE_URI $container_credentials
+ARG container_credentials
+ENV AWS_CONTAINER_CREDENTIALS_RELATIVE_URI $container_credentials
 
-RUN aws sts get-caller-identity
-
-RUN aws s3 sync --quiet s3://hcie-codelist-builder/data /srv/shiny-server/data
+RUN aws s3 sync --quiet s3://$BUCKET_NAME/data /srv/shiny-server/data
 
