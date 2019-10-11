@@ -7,8 +7,8 @@ USER shiny
 # COPY --chown=shiny:shiny . /srv/shiny-server
 COPY . /srv/shiny-server
 
-ARG container_credentials
-ENV AWS_CONTAINER_CREDENTIALS_RELATIVE_URI $container_credentials
+# ARG container_credentials
+# ENV AWS_CONTAINER_CREDENTIALS_RELATIVE_URI $container_credentials
 
 RUN aws sts get-caller-identity
 
