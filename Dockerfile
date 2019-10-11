@@ -9,5 +9,7 @@ COPY --chown=shiny:shiny . /srv/shiny-server
 ARG container_credentials
 ENV AWS_CONTAINER_CREDENTIALS_RELATIVE_URI $container_credentials
 
+RUN aws sts get-caller-identity
+
 RUN aws s3 sync --quiet s3://$BUCKET_NAME/data /srv/shiny-server/data
 
