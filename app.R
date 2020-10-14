@@ -420,34 +420,36 @@ server <- function(input, output, session) {
       paste("codelist_", Sys.Date(), ".xlsx", sep = "")
     },
     content = function(file) {
-      # Organized workbook format
-      wb <- createWorkbook()
-      if(exists("df_a")){
-        addWorksheet(wb = wb, sheetName = "MedDRA", gridLines = TRUE)
-        writeDataTable(wb = wb, sheet = "MedDRA", x = df_a, rowNames=TRUE)
-      }
-      if(exists("df_b")){
-        addWorksheet(wb = wb, sheetName = "ICD9", gridLines = TRUE)
-        writeDataTable(wb = wb, sheet = "ICD9", x = df_b, rowNames=TRUE)
-      }
-      if(exists("df_c")){
-        addWorksheet(wb = wb, sheetName = "ICD10", gridLines = TRUE)
-        writeDataTable(wb = wb, sheet = "ICD10", x = df_c, rowNames=TRUE)
-      }
-      if(exists("df_d")){
-        addWorksheet(wb = wb, sheetName = "DRG", gridLines = TRUE)
-        writeDataTable(wb = wb, sheet = "DRG", x = df_d, rowNames=TRUE)
-      }
-      if(exists("df_e")){
-        addWorksheet(wb = wb, sheetName = "NDC", gridLines = TRUE)
-        writeDataTable(wb = wb, sheet = "NDC", x = df_e, rowNames=TRUE)
-      }
-      if(exists("df_f")){
-        addWorksheet(wb = wb, sheetName = "HCPCS", gridLines = TRUE)
-        writeDataTable(wb = wb, sheet = "HCPCS", x = df_f, rowNames=TRUE)
-      }
       
-      saveWorkbook(wb, file, overwrite = TRUE)
+      # Organized workbook format
+      if(exists("df_a") | exists("df_b") | exists("df_c") | exists("df_d") | exists("df_e") | exists("df_f")){
+        wb <- createWorkbook()
+        if(exists("df_a")){
+          addWorksheet(wb = wb, sheetName = "MedDRA", gridLines = TRUE)
+          writeDataTable(wb = wb, sheet = "MedDRA", x = df_a, rowNames=TRUE)
+        }
+        if(exists("df_b")){
+          addWorksheet(wb = wb, sheetName = "ICD9", gridLines = TRUE)
+          writeDataTable(wb = wb, sheet = "ICD9", x = df_b, rowNames=TRUE)
+        }
+        if(exists("df_c")){
+          addWorksheet(wb = wb, sheetName = "ICD10", gridLines = TRUE)
+          writeDataTable(wb = wb, sheet = "ICD10", x = df_c, rowNames=TRUE)
+        }
+        if(exists("df_d")){
+          addWorksheet(wb = wb, sheetName = "DRG", gridLines = TRUE)
+          writeDataTable(wb = wb, sheet = "DRG", x = df_d, rowNames=TRUE)
+        }
+        if(exists("df_e")){
+          addWorksheet(wb = wb, sheetName = "NDC", gridLines = TRUE)
+          writeDataTable(wb = wb, sheet = "NDC", x = df_e, rowNames=TRUE)
+        }
+        if(exists("df_f")){
+          addWorksheet(wb = wb, sheetName = "HCPCS", gridLines = TRUE)
+          writeDataTable(wb = wb, sheet = "HCPCS", x = df_f, rowNames=TRUE)
+        }
+        saveWorkbook(wb, file, overwrite = TRUE)
+      }
     }
   )
 }
