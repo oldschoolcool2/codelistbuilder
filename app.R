@@ -1,4 +1,4 @@
-#install.packages(c("shinydashboard", "shiny","openxlsx","data.table","DT", "shinyjs"))
+#install.packages(c("shinydashboard", "shiny","openxlsx","data.table","DT", "shinyjs", "shinyalert"))
 
 library(shiny)
 library(shinydashboard)
@@ -7,6 +7,7 @@ library(data.table)
 library(DT)
 library(feather)
 library(shinyjs)
+library(shinyalert)
 
 # Set zip environment variable to save out the xlsx files
 #Sys.setenv(R_ZIPCMD= "zip.exe")
@@ -161,7 +162,7 @@ ui <- dashboardPage(
     menuItem("Code List Builder", tabName = "codelistbuilder", icon = icon("warehouse")),
     menuItem("About this Tool", tabName = "refs", icon = icon("university"), badgeLabel = "New!", badgeColor = "green")
   ),
-  dashboardBody(useShinyjs(),
+  dashboardBody(useShinyjs(), useShinyalert(),
     tabItems(
       tabItem(tabName = "codelistbuilder", class="active",
               h2("R&D Global Epidemiology Code List Builder"),
@@ -219,7 +220,7 @@ ui <- dashboardPage(
                               tabPanel("HCPCS Injection Codes", DT::dataTableOutput("hcpcs_table"))
                        )
               ), hr(),
-              fluidRow(
+              div(id='saver',
                 box(status='warning', 
                     textInput('code_group', label="Enter a Label for these Codes (Experimental)", value = "Example Code Group", width = NULL, placeholder = NULL),
                     tags$head(tags$script(src = "message-handler.js")),
@@ -415,8 +416,8 @@ server <- function(input, output, session) {
     #str(df_c)
     reset("form")
     i <<- i + 1
-    session$sendCustomMessage(type = 'testmessage',
-                              message = 'Code Group has been Added to Selections')
+    shinyalert("Success!", 'Code Group has been Added to Selections', type = "success")
+    reset("saver")
   })
   
   # Downloadable csv of selected dataset ----
