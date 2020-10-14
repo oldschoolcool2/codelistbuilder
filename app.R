@@ -247,6 +247,14 @@ ui <- dashboardPage(
 # Define server logic
 server <- function(input, output, session) {
   
+  i <- 1
+  df_a <- icd_meddra[FALSE,c(5,6,7,8)]
+  df_b <- icd9[FALSE,c(1,2)]
+  df_c <- icd10[FALSE,c(1,2,4,5)]
+  df_d <- drg[FALSE,c(3,2)]
+  df_e <- redbook[FALSE,c(1,32,30)]
+  df_f <- hcpcs[FALSE,c(1,5,4)]
+  
   # Server side selectize updating
   updateSelectizeInput(session, 'selected_icd92',   choices = icd9$item2,   server = TRUE)
   updateSelectizeInput(session, 'selected_icd93',   choices = icd9$item3,   server = TRUE)
@@ -329,10 +337,8 @@ server <- function(input, output, session) {
     DT::datatable(unique(ndcdf), options = list(lengthMenu = c(5, 30, 50), pageLength = 5), rownames= FALSE)
   })
   
-  
   # Add code labels here
   observeEvent(input$add_label, {
-    ifelse(exists('i'), i <<- i + 1, i <- 1)
     hcpcs_data <- hcpcs[hcpcs$item %chin% input$selected_hcpcs, c(1:48), drop=FALSE]
     
     drg_data <- drg[(drg$drg_item %chin% input$selected_drg | drg$DRG_VALUE2 %chin% input$selected_drg2), c(3,2), drop=FALSE]
@@ -374,40 +380,41 @@ server <- function(input, output, session) {
                                                                     icd10$VALUE %chin% icd9_10GEMS[icd9_10GEMS$V1 %chin% icd9[(icd9$item %chin% input$selected_icd9 | icd9$item2 %chin% input$selected_icd92 | icd9$item3 %chin% input$selected_icd93| icd9$item4 %chin% input$selected_icd94), ]$DIAGNOSIS.CODE, ]$V2),]$VALUE
     ), c(5,6,7,8), drop=FALSE]
     
-    if(exists("icd9_data")){
-      icd9_data$code_group <- input$code_group
-      icd9_data$code_group_n <- i
-      }
-    if(exists("icd10_data")){
-      icd10_data$code_group <- input$code_group
-      icd10_data$code_group_n <- i
-      }
     if(exists("icd_meddra_data")){
       icd_meddra_data$code_group <- input$code_group
       icd_meddra_data$code_group_n <- i
-      }
+      df_a <<- rbind(df_a, icd_meddra_data)
+    }
+    if(exists("icd9_data")){
+      icd9_data$code_group <- input$code_group
+      icd9_data$code_group_n <- i
+      df_b <<- rbind(df_b, icd9_data      )
+    }
+    if(exists("icd10_data")){
+      icd10_data$code_group <- input$code_group
+      icd10_data$code_group_n <- i
+      df_c <<- rbind(df_c, icd10_data     )
+    }
     if(exists("drg_data")){
       drg_data$code_group <- input$code_group
       drg_data$code_group_n <- i
-      }
+      df_d <<- rbind(df_d, drg_data       )
+    }
     if(exists("ndc_data")){
       ndc_data$code_group <- input$code_group
       ndc_data$code_group_n <- i
-      }
+      df_e <<- rbind(df_e, ndc_data       )
+    }
     if(exists("hcpcs_data")){
       hcpcs_data$code_group <- input$code_group
       hcpcs_data$code_group_n <- i
-      }
+      df_f <<- rbind(df_f, hcpcs_data     )
+    }
+    str(df_c)
     
-    ifelse(exists("df_a"), df_a <- rbind(df_a, icd_meddra_data), df_a <- icd_meddra_data)
-    ifelse(exists("df_b"), df_b <- rbind(df_b, icd9_data      ), df_b <- icd9_data)
-    ifelse(exists("df_c"), df_c <- rbind(df_c, icd10_data     ), df_c <- icd10_data)
-    ifelse(exists("df_d"), df_d <- rbind(df_d, drg_data       ), df_d <- drg_data)
-    ifelse(exists("df_e"), df_e <- rbind(df_e, ndc_data       ), df_e <- ndc_data)
-    ifelse(exists("df_f"), df_f <- rbind(df_f, hcpcs_data     ), df_f <- hcpcs_data)
-    
+    #str(df_c)
     reset("form")
-    
+    i <<- i + 1
     session$sendCustomMessage(type = 'testmessage',
                               message = 'Code Group has been Added to Selections')
   })
@@ -419,37 +426,22 @@ server <- function(input, output, session) {
     filename = function() {
       paste("codelist_", Sys.Date(), ".xlsx", sep = "")
     },
-    content = function(file) {
-      
+    content = function(file) {  
       # Organized workbook format
-      if(exists("df_a") | exists("df_b") | exists("df_c") | exists("df_d") | exists("df_e") | exists("df_f")){
-        wb <- createWorkbook()
-        if(exists("df_a")){
-          addWorksheet(wb = wb, sheetName = "MedDRA", gridLines = TRUE)
-          writeDataTable(wb = wb, sheet = "MedDRA", x = df_a, rowNames=TRUE)
-        }
-        if(exists("df_b")){
-          addWorksheet(wb = wb, sheetName = "ICD9", gridLines = TRUE)
-          writeDataTable(wb = wb, sheet = "ICD9", x = df_b, rowNames=TRUE)
-        }
-        if(exists("df_c")){
-          addWorksheet(wb = wb, sheetName = "ICD10", gridLines = TRUE)
-          writeDataTable(wb = wb, sheet = "ICD10", x = df_c, rowNames=TRUE)
-        }
-        if(exists("df_d")){
-          addWorksheet(wb = wb, sheetName = "DRG", gridLines = TRUE)
-          writeDataTable(wb = wb, sheet = "DRG", x = df_d, rowNames=TRUE)
-        }
-        if(exists("df_e")){
-          addWorksheet(wb = wb, sheetName = "NDC", gridLines = TRUE)
-          writeDataTable(wb = wb, sheet = "NDC", x = df_e, rowNames=TRUE)
-        }
-        if(exists("df_f")){
-          addWorksheet(wb = wb, sheetName = "HCPCS", gridLines = TRUE)
-          writeDataTable(wb = wb, sheet = "HCPCS", x = df_f, rowNames=TRUE)
-        }
-        saveWorkbook(wb, file, overwrite = TRUE)
-      }
+      wb <- createWorkbook()
+      addWorksheet(wb = wb, sheetName = "MedDRA", gridLines = TRUE)
+      writeDataTable(wb = wb, sheet = "MedDRA", x = df_a, rowNames=TRUE)
+      addWorksheet(wb = wb, sheetName = "ICD9", gridLines = TRUE)
+      writeDataTable(wb = wb, sheet = "ICD9", x = df_b, rowNames=TRUE)
+      addWorksheet(wb = wb, sheetName = "ICD10", gridLines = TRUE)
+      writeDataTable(wb = wb, sheet = "ICD10", x = df_c, rowNames=TRUE)
+      addWorksheet(wb = wb, sheetName = "DRG", gridLines = TRUE)
+      writeDataTable(wb = wb, sheet = "DRG", x = df_d, rowNames=TRUE)
+      addWorksheet(wb = wb, sheetName = "NDC", gridLines = TRUE)
+      writeDataTable(wb = wb, sheet = "NDC", x = df_e, rowNames=TRUE)
+      addWorksheet(wb = wb, sheetName = "HCPCS", gridLines = TRUE)
+      writeDataTable(wb = wb, sheet = "HCPCS", x = df_f, rowNames=TRUE)
+      saveWorkbook(wb, file, overwrite = TRUE)
     }
   )
 }
