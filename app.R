@@ -1,4 +1,4 @@
-#install.packages(c("shinydashboard", "shiny","openxlsx","data.table","DT"))
+#install.packages(c("shinydashboard", "shiny","openxlsx","data.table","DT", "shinyjs"))
 
 library(shiny)
 library(shinydashboard)
@@ -6,6 +6,7 @@ library(openxlsx)
 library(data.table)
 library(DT)
 library(feather)
+library(shinyjs)
 
 # Set zip environment variable to save out the xlsx files
 #Sys.setenv(R_ZIPCMD= "zip.exe")
@@ -37,20 +38,22 @@ library(feather)
 #   redbook <- fread(file="data\\redbook.csv", sep = ",", header= TRUE, colClasses = list(characer=c(1:33)))
 #   redbook$ROADS <- ifelse(redbook$ROADS == '', 'Unspecified Route', redbook$ROADS)
 #   
-#    drg <- fread(file="data\\drg34g.csv", sep=",", header=FALSE, colClasses = c("numeric", "character"), col.names = c("DRG", "LABEL"))
-#    drg$DRG_VALUE <- formatC(drg$DRG, width=3, flag="0")
-#    drg$DRG_VALUE2 <- substr(drg$DRG_VALUE, 1,2)
-#    drg$item <- paste(drg$drg_value, ' - ', drg$LABEL)
+#   drg <- fread(file="data\\drg34g.csv", sep=",", header=FALSE, colClasses = c("numeric", "character"), col.names = c("DRG", "LABEL"))
+#   drg$DRG_VALUE <- formatC(drg$DRG, width=3, flag="0")
+#   drg$DRG_VALUE2 <- substr(drg$DRG_VALUE, 1,2)
+#   drg$item <- paste(drg$drg_value, ' - ', drg$LABEL)
 #   
+#  icd_meddra <- fread(file="data/icd_to_meddra_version_230.csv", sep="$", header=TRUE)
+#
 #   # Save all datasets to feather format for efficiency!
 #   datasets <- list(hcpcs = hcpcs, icd10 = icd10, icd10_9GEMS = icd10_9GEMS, icd9 = icd9, 
-#                    icd9_10GEMS=icd9_10GEMS, redbook=redbook, drg=drg)
+#                    icd9_10GEMS=icd9_10GEMS, redbook=redbook, drg=drg, meddra=icd_medddra)
 #   names_list <- names(datasets)
 #   
 #   for (i in seq_along(datasets)) {
 #     write_feather(datasets[[i]], path=paste0("data\\", names_list[i], ".feather"))
 #   }
-#   rm(datasets, names_list, hcpcs, icd10, icd10_9GEMS, icd9, icd9_10GEMS, redbook, drg, i)
+#   rm(datasets, names_list, hcpcs, icd10, icd10_9GEMS, icd9, icd9_10GEMS, redbook, drg, icd_meddra, i)
 # }
 
 ##################################################################################################################
@@ -87,16 +90,18 @@ if (update_datasets == TRUE){
   drg$DRG_VALUE <- formatC(drg$DRG, width=3, flag="0")
   drg$DRG_VALUE2 <- substr(drg$DRG_VALUE, 1,2)
   drg$drg_item <- paste(drg$DRG_VALUE, ' - ', drg$LABEL)
+ 
+  icd_meddra <- fread(file="data/icd_to_meddra_version_230.csv", sep="$", header=TRUE)
   
   # Save all datasets to feather format for efficiency!
   datasets <- list(hcpcs = hcpcs, icd10 = icd10, icd10_9GEMS = icd10_9GEMS, icd9 = icd9, 
-                   icd9_10GEMS=icd9_10GEMS, redbook=redbook, drg=drg)
+                   icd9_10GEMS=icd9_10GEMS, redbook=redbook, drg=drg, icd_meddra=icd_meddra)
   names_list <- names(datasets)
   
   for (i in seq_along(datasets)) {
     write_feather(datasets[[i]], path=paste0("data\\", names_list[i], ".feather"))
   }
-  rm(datasets, names_list, hcpcs, icd10, icd10_9GEMS, icd9, icd9_10GEMS, redbook, drg, i)
+  rm(datasets, names_list, hcpcs, icd10, icd10_9GEMS, icd9, icd9_10GEMS, redbook, drg, icd_meddra, i)
 }
 ##################################################################################################################
 ##################################################################################################################
@@ -111,7 +116,7 @@ icd10 <- read_feather(paste0("data/", "icd10.feather"))
 icd10_9GEMS <- read_feather(paste0("data/", "icd10_9GEMS.feather"))
 redbook <- read_feather(paste0("data/", "redbook.feather"))
 drg <- read_feather(paste0("data/", "drg.feather"))
-
+icd_meddra <- read_feather(paste0("data/", "icd_meddra.feather"))
 
 ##################################################################################################################
 ##################################################################################################################
@@ -140,24 +145,34 @@ ui <- dashboardPage(
                    message = "DRG Codes added!",
                    icon = icon("exchange"),
                    time = "08-15-2018"
+                 ),
+                 messageItem(
+                   from = "Mike",
+                   message = "MedDRA to ICD-10 Mapping added!",
+                   icon = icon("file-medical"),
+                   time = "13-10-2020"
                  )
     )
   ),
   dashboardSidebar(
     width = 350,
-    #menuItem("Home", tabName = "home", icon = icon("dashboard")),
-    menuItem("Code List Builder", tabName = "codelistbuilder", icon = icon("th"), badgeLabel = "Start Here", badgeColor = "green")
+    #menuItem("Home", tabName = "home", icon = icon("dashboard")),sidebar <- dashboardSidebar(
+    collapsed = TRUE,
+    menuItem("Code List Builder", tabName = "codelistbuilder", icon = icon("warehouse")),
+    menuItem("About this Tool", tabName = "refs", icon = icon("university"), badgeLabel = "New!", badgeColor = "green")
   ),
-  dashboardBody(
+  dashboardBody(useShinyjs(),
     tabItems(
-      # First tab content
-      #tabItem(tabName = "home",
-      #        h2("Home tab content")
-      #),
       tabItem(tabName = "codelistbuilder", class="active",
               h2("R&D Global Epidemiology Code List Builder"),
-              fluidRow(
+              div(id='form',
                 # Sidebar with selection options
+                box(
+                  title='MedDRA Medical Dictionary', solidHeader = TRUE, background='fuchsia', width=4,
+                  selectInput('selected_MedDRA_PT', 'Select MedDRA Preferred Terms (PTs)', choices=NULL, multiple=TRUE, selectize=TRUE),
+                  selectInput('selected_MedDRA_LLT', 'Select MedDRA Lower Level Terms (LLTs)',  choices=NULL, multiple=TRUE, selectize=TRUE),
+                  selectInput('selected_MedDRA_LLT_COD', 'Select MedDRA Lower Level Codes',  choices=NULL, multiple=TRUE, selectize=TRUE)
+                ),
                 box(
                   title='ICD-9 Codes for Diagnoses', solidHeader = TRUE, background='light-blue', width=4,
                   selectInput('selected_icd92',  'Select ICD-9 Codes (2-digits)',  choices=NULL, multiple=TRUE, selectize=TRUE),
@@ -173,6 +188,11 @@ ui <- dashboardPage(
                   selectInput('selected_icd10', 'Select ICD-10 Codes', choices=NULL, multiple=TRUE, selectize=TRUE)
                 ),
                 box(
+                  title='Diagnostic Related Group', solidHeader = TRUE, background='purple', width=4,
+                  selectInput('selected_drg2', 'Select DRG Codes (2-digits)', choices=NULL, multiple=TRUE, selectize=TRUE),
+                  selectInput('selected_drg', 'Select DRG Codes',  choices=NULL, multiple=TRUE, selectize=TRUE)
+                ),
+                box(
                   title='National Drug Code (NDC) Prescription Codes', solidHeader = TRUE, background='red', width=4,
                   selectInput('selected_routes', 'Select NDC Codes by Route (REQUIRED)',  choices=NULL, multiple=TRUE, selectize=TRUE),
                   selectInput('selected_gennme', 'Select NDC Codes by Generic Name',  choices=NULL, multiple=TRUE, selectize=TRUE),
@@ -183,29 +203,39 @@ ui <- dashboardPage(
                 box(
                   title='HCPCS Codes for Injections', solidHeader = TRUE, background='olive', width=4,
                   selectInput('selected_hcpcs', 'Select HCPCS Codes',  choices=NULL, multiple=TRUE, selectize=TRUE)
-                ),
-                box(
-                  title='Diagnostic Related Group', solidHeader = TRUE, background='purple', width=4,
-                  selectInput('selected_drg2', 'Select DRG Codes (2-digits)', choices=NULL, multiple=TRUE, selectize=TRUE),
-                  selectInput('selected_drg', 'Select DRG Codes',  choices=NULL, multiple=TRUE, selectize=TRUE)
                 )
               ),
               
               # Show a plot of the generated distribution
               fluidRow(title="Current Selections",
                        tabBox(id = 'code_tables', width=12,
+                              tabPanel("MedDRA Terms", DT::dataTableOutput("icd_meddra_table")),
                               tabPanel("ICD-9 Diagnosis Codes", DT::dataTableOutput("icd9_table")),
                               tabPanel("ICD-10 Diagnosis Codes", DT::dataTableOutput("icd10_table")),
                               tabPanel("DRG Codes", DT::dataTableOutput("drg_table")),
-                              tabPanel("HCPCS Injection Codes", DT::dataTableOutput("hcpcs_table")),
                               tabPanel("NDC Medication Codes", DT::dataTableOutput("ndc_table"),
                                        hr(),
-                                       "List of Distinct Generic Names only:", DT::dataTableOutput("ndc_gentable"))
+                                       "List of Distinct Generic Names only:", DT::dataTableOutput("ndc_gentable")),
+                              tabPanel("HCPCS Injection Codes", DT::dataTableOutput("hcpcs_table"))
                        )
-              ),
+              ), hr(),
               fluidRow(
+                box(status='warning', 
+                    textInput('code_group', label="Enter a Label for these Codes (Experimental)", value = "Example Code Group", width = NULL, placeholder = NULL),
+                    tags$head(tags$script(src = "message-handler.js")),
+                    actionButton("add_label", "Save Codes and Reset Selection")
+                ),
                 box(title='Click Here to Save Your Results', status='success', downloadButton("downloadData", "Download"))
               )
+      ),
+      tabItem(tabName = "refs",
+              h2("R&D Global Epidemiology Code List Builder Information"),
+              h3("Data Sources"),
+              p("The content of this tool come from multiple sources. ICD-9, ICD-10, HCPCS, and DRG codes are all sourced from the US Centers for Medicaid Services website cms.gov"),
+              p("The MedDRA codes were developed in-house by the Medical Coding Group (contact Kerstin Kuehn for more information)."),
+              p("NDC codes used in this tool come from the IBM Marketscan Redbook tables."),
+              h3("Internal Data Linkages"),
+              p("In this tool, automatic linkage between MedDRA, ICD-9, and ICD-10 are made by the mapping file from Medical Coding and the ICD-9<->ICD-10 GEMs linkages found on cms.gov.")
       )
     )
   )
@@ -233,22 +263,53 @@ server <- function(input, output, session) {
   updateSelectizeInput(session, 'selected_prodnme', choices = redbook$PRODNME, server = TRUE)
   updateSelectizeInput(session, 'selected_THRCLSD', choices = redbook$THRCLDS, server = TRUE)
   updateSelectizeInput(session, 'selected_routes',  choices = redbook$ROADS,   server = TRUE)
+  
   updateSelectizeInput(session, 'selected_drg',     choices = drg$drg_item,    server = TRUE)
   updateSelectizeInput(session, 'selected_drg2',    choices = drg$DRG_VALUE2,  server = TRUE)
+  
+  updateSelectizeInput(session, 'selected_MedDRA_PT',     choices = icd_meddra$PT_NAM,   server = TRUE)
+  updateSelectizeInput(session, 'selected_MedDRA_LLT',    choices = icd_meddra$LLT_NAM,  server = TRUE)
+  updateSelectizeInput(session, 'selected_MedDRA_LLT_COD',choices = icd_meddra$LLT_COD,  server = TRUE)
   
   # Render coding tables for display of selected codes
   output$icd9_table <- DT::renderDataTable({
     DT::datatable(icd9[(icd9$item2 %chin% input$selected_icd92 | icd9$item3 %chin% input$selected_icd93 | 
                           icd9$item4 %chin% input$selected_icd94 | icd9$item %chin% input$selected_icd9 | 
-                          icd9$DIAGNOSIS.CODE %chin% icd10_9GEMS[icd10_9GEMS$V1 %chin% icd10[(icd10$item %chin% input$selected_icd10 | icd10$item2 %chin% input$selected_icd102 | icd10$item3 %chin% input$selected_icd103 | icd10$item4 %chin% input$selected_icd104), ]$VALUE, ]$V2)
-                       , c(1,2), drop=FALSE]
+                          icd9$DIAGNOSIS.CODE %chin% icd10_9GEMS[icd10_9GEMS$V1 %chin% 
+                                                                   icd10[(icd10$item2%chin% input$selected_icd102 | icd10$item3 %chin% input$selected_icd103 | 
+                                                                            icd10$item4 %chin% input$selected_icd104 | icd10$item %chin% input$selected_icd10 | 
+                                                                            icd10$VALUE %chin% icd9_10GEMS[icd9_10GEMS$V1 %chin% icd9[(icd9$item %chin% input$selected_icd9 | icd9$item2 %chin% input$selected_icd92 | icd9$item3 %chin% input$selected_icd93| icd9$item4 %chin% input$selected_icd94), ]$DIAGNOSIS.CODE, ]$V2 |
+                                                                            icd10$VALUE %chin% icd_meddra[(icd_meddra$PT_NAM %chin% input$selected_MedDRA_PT | 
+                                                                                                             icd_meddra$LLT_NAM %chin% input$selected_MedDRA_LLT | 
+                                                                                                             icd_meddra$LLT_COD %in% input$selected_MedDRA_LLT_COD  |
+                                                                                                             icd_meddra$CODE %chin% icd10[(icd10$item2%chin% input$selected_icd102 | icd10$item3 %chin% input$selected_icd103 | 
+                                                                                                                                             icd10$item4 %chin% input$selected_icd104 | icd10$item %chin% input$selected_icd10 | 
+                                                                                                                                             icd10$VALUE %chin% icd9_10GEMS[icd9_10GEMS$V1 %chin% icd9[(icd9$item %chin% input$selected_icd9 | icd9$item2 %chin% input$selected_icd92 | icd9$item3 %chin% input$selected_icd93| icd9$item4 %chin% input$selected_icd94), ]$DIAGNOSIS.CODE, ]$V2),]$VALUE),]$CODE
+                                                                   ), ]$VALUE, ]$V2
+                        ), c(1,2), drop=FALSE]
                   , options = list(lengthMenu = c(5, 30, 50), pageLength = 5), rownames= FALSE)
   })
   output$icd10_table <- DT::renderDataTable({
     DT::datatable(icd10[(icd10$item2%chin% input$selected_icd102 | icd10$item3 %chin% input$selected_icd103 | 
                            icd10$item4 %chin% input$selected_icd104 | icd10$item %chin% input$selected_icd10 | 
-                           icd10$VALUE %chin% icd9_10GEMS[icd9_10GEMS$V1 %chin% icd9[(icd9$item %chin% input$selected_icd9 | icd9$item2 %chin% input$selected_icd92 | icd9$item3 %chin% input$selected_icd93| icd9$item4 %chin% input$selected_icd94), ]$DIAGNOSIS.CODE, ]$V2)
-                        , c(1,2,4,5), drop=FALSE]
+                           icd10$VALUE %chin% icd9_10GEMS[icd9_10GEMS$V1 %chin% icd9[(icd9$item %chin% input$selected_icd9 | icd9$item2 %chin% input$selected_icd92 | icd9$item3 %chin% input$selected_icd93| icd9$item4 %chin% input$selected_icd94), ]$DIAGNOSIS.CODE, ]$V2 |
+                           icd10$VALUE %chin% icd_meddra[(icd_meddra$PT_NAM %chin% input$selected_MedDRA_PT | 
+                                      icd_meddra$LLT_NAM %chin% input$selected_MedDRA_LLT | 
+                                      icd_meddra$LLT_COD %in% input$selected_MedDRA_LLT_COD  |
+                                      icd_meddra$CODE %chin% icd10[(icd10$item2%chin% input$selected_icd102 | icd10$item3 %chin% input$selected_icd103 | 
+                                                                      icd10$item4 %chin% input$selected_icd104 | icd10$item %chin% input$selected_icd10 | 
+                                                                      icd10$VALUE %chin% icd9_10GEMS[icd9_10GEMS$V1 %chin% icd9[(icd9$item %chin% input$selected_icd9 | icd9$item2 %chin% input$selected_icd92 | icd9$item3 %chin% input$selected_icd93| icd9$item4 %chin% input$selected_icd94), ]$DIAGNOSIS.CODE, ]$V2),]$VALUE),]$CODE
+                        ), c(1,2,4,5), drop=FALSE]
+                  , options = list(lengthMenu = c(5, 30, 50), pageLength = 5), rownames= FALSE)
+  })
+  output$icd_meddra_table <- DT::renderDataTable({
+    DT::datatable(icd_meddra[(icd_meddra$PT_NAM %chin% input$selected_MedDRA_PT | 
+                                icd_meddra$LLT_NAM %chin% input$selected_MedDRA_LLT | 
+                                icd_meddra$LLT_COD %in% input$selected_MedDRA_LLT_COD  |
+                                icd_meddra$CODE %chin% icd10[(icd10$item2%chin% input$selected_icd102 | icd10$item3 %chin% input$selected_icd103 | 
+                                                                icd10$item4 %chin% input$selected_icd104 | icd10$item %chin% input$selected_icd10 | 
+                                                                icd10$VALUE %chin% icd9_10GEMS[icd9_10GEMS$V1 %chin% icd9[(icd9$item %chin% input$selected_icd9 | icd9$item2 %chin% input$selected_icd92 | icd9$item3 %chin% input$selected_icd93| icd9$item4 %chin% input$selected_icd94), ]$DIAGNOSIS.CODE, ]$V2),]$VALUE
+                           ), c(5,6,7,8), drop=FALSE]
                   , options = list(lengthMenu = c(5, 30, 50), pageLength = 5), rownames= FALSE)
   })
   output$hcpcs_table <- DT::renderDataTable({
@@ -281,26 +342,75 @@ server <- function(input, output, session) {
       drg_data <- drg[(drg$drg_item %chin% input$selected_drg | drg$DRG_VALUE2 %chin% input$selected_drg2), c(3,2), drop=FALSE]
       icd9_data  <- icd9[(icd9$item2 %chin% input$selected_icd92 | icd9$item3 %chin% input$selected_icd93 | 
                             icd9$item4 %chin% input$selected_icd94 | icd9$item %chin% input$selected_icd9 | 
-                            icd9$DIAGNOSIS.CODE %chin% icd10_9GEMS[icd10_9GEMS$V1 %chin% icd10[(icd10$item %chin% input$selected_icd10 | icd10$item2 %chin% input$selected_icd102 | icd10$item3 %chin% input$selected_icd103 | icd10$item4 %chin% input$selected_icd104), ]$VALUE, ]$V2)
-                         , c(1,2), drop=FALSE]
-      icd10_data  <- icd10[(icd10$item2 %chin% input$selected_icd102 | icd10$item3 %chin% input$selected_icd103 | 
+                            icd9$DIAGNOSIS.CODE %chin% icd10_9GEMS[icd10_9GEMS$V1 %chin% 
+                                                                     icd10[(icd10$item2%chin% input$selected_icd102 | icd10$item3 %chin% input$selected_icd103 | 
+                                                                              icd10$item4 %chin% input$selected_icd104 | icd10$item %chin% input$selected_icd10 | 
+                                                                              icd10$VALUE %chin% icd9_10GEMS[icd9_10GEMS$V1 %chin% icd9[(icd9$item %chin% input$selected_icd9 | icd9$item2 %chin% input$selected_icd92 | icd9$item3 %chin% input$selected_icd93| icd9$item4 %chin% input$selected_icd94), ]$DIAGNOSIS.CODE, ]$V2 |
+                                                                              icd10$VALUE %chin% icd_meddra[(icd_meddra$PT_NAM %chin% input$selected_MedDRA_PT | 
+                                                                                                               icd_meddra$LLT_NAM %chin% input$selected_MedDRA_LLT | 
+                                                                                                               icd_meddra$LLT_COD %in% input$selected_MedDRA_LLT_COD  |
+                                                                                                               icd_meddra$CODE %chin% icd10[(icd10$item2%chin% input$selected_icd102 | icd10$item3 %chin% input$selected_icd103 | 
+                                                                                                                                               icd10$item4 %chin% input$selected_icd104 | icd10$item %chin% input$selected_icd10 | 
+                                                                                                                                               icd10$VALUE %chin% icd9_10GEMS[icd9_10GEMS$V1 %chin% icd9[(icd9$item %chin% input$selected_icd9 | icd9$item2 %chin% input$selected_icd92 | icd9$item3 %chin% input$selected_icd93| icd9$item4 %chin% input$selected_icd94), ]$DIAGNOSIS.CODE, ]$V2),]$VALUE),]$CODE
+                                                                     ), ]$VALUE, ]$V2
+                          ), c(1,2), drop=FALSE]
+      icd10_data  <- icd10[(icd10$item2%chin% input$selected_icd102 | icd10$item3 %chin% input$selected_icd103 | 
                               icd10$item4 %chin% input$selected_icd104 | icd10$item %chin% input$selected_icd10 | 
-                              icd10$VALUE %chin% icd9_10GEMS[icd9_10GEMS$V1 %chin% icd9[(icd9$item %chin% input$selected_icd9 | icd9$item2 %chin% input$selected_icd92 | icd9$item3 %chin% input$selected_icd93 | icd9$item4 %chin% input$selected_icd94), ]$DIAGNOSIS.CODE, ]$V2)
-                           , c(1,2,4,5), drop=FALSE]
-      ndc_data <- redbook[((redbook$GENNME %chin% input$selected_gennme | redbook$PRODNME %chin% input$selected_prodnme | redbook$THRCLDS %chin% input$selected_THRCLSD) & (redbook$ROADS %chin% input$selected_routes)),
-                          c(1,32,30, c(2:29), 33), drop=FALSE]
+                              icd10$VALUE %chin% icd9_10GEMS[icd9_10GEMS$V1 %chin% icd9[(icd9$item %chin% input$selected_icd9 | icd9$item2 %chin% input$selected_icd92 | icd9$item3 %chin% input$selected_icd93| icd9$item4 %chin% input$selected_icd94), ]$DIAGNOSIS.CODE, ]$V2 |
+                              icd10$VALUE %chin% icd_meddra[(icd_meddra$PT_NAM %chin% input$selected_MedDRA_PT | 
+                                                               icd_meddra$LLT_NAM %chin% input$selected_MedDRA_LLT | 
+                                                               icd_meddra$LLT_COD %in% input$selected_MedDRA_LLT_COD  |
+                                                               icd_meddra$CODE %chin% icd10[(icd10$item2%chin% input$selected_icd102 | icd10$item3 %chin% input$selected_icd103 | 
+                                                                                               icd10$item4 %chin% input$selected_icd104 | icd10$item %chin% input$selected_icd10 | 
+                                                                                               icd10$VALUE %chin% icd9_10GEMS[icd9_10GEMS$V1 %chin% icd9[(icd9$item %chin% input$selected_icd9 | icd9$item2 %chin% input$selected_icd92 | icd9$item3 %chin% input$selected_icd93| icd9$item4 %chin% input$selected_icd94), ]$DIAGNOSIS.CODE, ]$V2),]$VALUE),]$CODE
+                          ), c(1,2,4,5), drop=FALSE]
+      ndc_data <- redbook[((redbook$GENNME %chin% input$selected_gennme | redbook$PRODNME %chin% input$selected_prodnme | redbook$THRCLDS %chin% input$selected_THRCLSD) & (redbook$ROADS %chin% input$selected_routes)
+                          ), c(1,32,30, c(2:29), 33), drop=FALSE]
+      icd_meddra_data <-icd_meddra[(icd_meddra$PT_NAM %chin% input$selected_MedDRA_PT | 
+                                      icd_meddra$LLT_NAM %chin% input$selected_MedDRA_LLT | 
+                                      icd_meddra$LLT_COD %in% input$selected_MedDRA_LLT_COD  |
+                                      icd_meddra$CODE %chin% icd10[(icd10$item2%chin% input$selected_icd102 | icd10$item3 %chin% input$selected_icd103 | 
+                                                                      icd10$item4 %chin% input$selected_icd104 | icd10$item %chin% input$selected_icd10 | 
+                                                                      icd10$VALUE %chin% icd9_10GEMS[icd9_10GEMS$V1 %chin% icd9[(icd9$item %chin% input$selected_icd9 | icd9$item2 %chin% input$selected_icd92 | icd9$item3 %chin% input$selected_icd93| icd9$item4 %chin% input$selected_icd94), ]$DIAGNOSIS.CODE, ]$V2),]$VALUE
+                          ), c(5,6,7,8), drop=FALSE]
+      
+      # Add code labels here
+      observeEvent(input$add_label, {
+        icd9_data$code_group <- input$code_group
+        icd10_data$code_group <- input$code_group
+        icd_meddra_data$code_group <- input$code_group
+        drg_data$code_group <- input$code_group
+        ndc_data$code_group <- input$code_group
+        hcpcs_data$code_group <- input$code_group
+        
+        
+        a <- rbind(icd_meddra_data, if(exists("a")) a)
+        b <- rbind(icd9_data, if(exists("b")) b)
+        c <- rbind(icd10_data, if(exists("c")) c)
+        d <- rbind(drg_data, if(exists("d")) d)
+        e <- rbind(ndc_data, if(exists("e")) e)
+        f <- rbind(hcpcs_data, if(exists("f")) f)
+        
+        reset("form")
+        
+        session$sendCustomMessage(type = 'testmessage',
+                                  message = 'Code Group has been Added to Selections')
+      })
+      
       # Organized workbook format
       wb <- createWorkbook()
+      addWorksheet(wb = wb, sheetName = "MedDRA", gridLines = TRUE)
+      writeDataTable(wb = wb, sheet = "MedDRA", x = a, rowNames=TRUE)
       addWorksheet(wb = wb, sheetName = "ICD9", gridLines = TRUE)
-      writeDataTable(wb = wb, sheet = "ICD9", x = icd9_data, rowNames=TRUE)
+      writeDataTable(wb = wb, sheet = "ICD9", x = b, rowNames=TRUE)
       addWorksheet(wb = wb, sheetName = "ICD10", gridLines = TRUE)
-      writeDataTable(wb = wb, sheet = "ICD10", x = icd10_data, rowNames=TRUE)
+      writeDataTable(wb = wb, sheet = "ICD10", x = c, rowNames=TRUE)
       addWorksheet(wb = wb, sheetName = "DRG", gridLines = TRUE)
-      writeDataTable(wb = wb, sheet = "DRG", x = drg_data, rowNames=TRUE)
-      addWorksheet(wb = wb, sheetName = "HCPCS", gridLines = TRUE)
-      writeDataTable(wb = wb, sheet = "HCPCS", x = hcpcs_data, rowNames=TRUE)
+      writeDataTable(wb = wb, sheet = "DRG", x = d, rowNames=TRUE)
       addWorksheet(wb = wb, sheetName = "NDC", gridLines = TRUE)
-      writeDataTable(wb = wb, sheet = "NDC", x = ndc_data, rowNames=TRUE)
+      writeDataTable(wb = wb, sheet = "NDC", x = e, rowNames=TRUE)
+      addWorksheet(wb = wb, sheetName = "HCPCS", gridLines = TRUE)
+      writeDataTable(wb = wb, sheet = "HCPCS", x = f, rowNames=TRUE)
       
       saveWorkbook(wb, file, overwrite = TRUE)
     }
